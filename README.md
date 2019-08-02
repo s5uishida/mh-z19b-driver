@@ -2,7 +2,7 @@
 mh-z19b-driver is a java library that operates CO2 gas concentration sensor called [MH-Z19B](https://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z19b-co2-ver1_0.pdf) to connect MH-Z19B to GPIO terminal of Raspberry Pi 3B and make it for use in java. I releases this in the form of the Eclipse plug-in project.
 You need Java 8 or higher.
 
-I use [java-simple-serial-connector](https://code.google.com/archive/p/java-simple-serial-connector/)
+I use [jSerialComm](https://github.com/Fazecast/jSerialComm)
 for serial communication in java and have confirmed that it works in Raspberry Pi 3B ([Raspbian Buster Lite OS](https://www.raspberrypi.org/downloads/raspbian/) (2019-07-10)).
 
 ## Connection of MH-Z19B and Raspberry Pi 3B
@@ -59,7 +59,7 @@ If git is not included, please install it.
 
 ## Use this with the following bundles
 - [SLF4J 1.7.26](https://www.slf4j.org/)
-- [JSSC (Java Simple Serial Connector) 2.8.0](https://mvnrepository.com/artifact/org.everit.osgi.bundles/org.everit.osgi.bundles.org.scream3r.jssc/2.8.0)
+- [jSerialComm 2.5.1](https://mvnrepository.com/artifact/com.fazecast/jSerialComm/2.5.1)
 
 I would like to thank the authors of these very useful codes, and all the contributors.
 

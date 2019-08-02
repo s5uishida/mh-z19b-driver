@@ -8,9 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jssc.SerialPort;
-import jssc.SerialPortException;
-import jssc.SerialPortTimeoutException;
+import com.fazecast.jSerialComm.SerialPort;
 
 /*
  * Refer to https://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z19b-co2-ver1_0.pdf
@@ -22,12 +20,11 @@ public class MHZ19BDriver {
 	private static final Logger LOG = LoggerFactory.getLogger(MHZ19BDriver.class);
 
 	private static final int DEFAULT_TIMEOUT = 1000; // default read timeout (msec)
-	private static final int WAIT_CLOSE_INTERVAL = 100; // msec
 
-	private static final int BAUDRATE = SerialPort.BAUDRATE_9600;
-	private static final int DATABITS = SerialPort.DATABITS_8;
-	private static final int STOPBITS = SerialPort.STOPBITS_1;
-	private static final int PARITY = SerialPort.PARITY_NONE;
+	private static final int BAUDRATE = 9600;
+	private static final int DATABITS = 8;
+	private static final int STOPBITS = SerialPort.ONE_STOP_BIT;
+	private static final int PARITY = SerialPort.NO_PARITY;
 
 	private static final byte[] CMD_GAS_CONCENTRATION = {(byte)0xff, 0x01, (byte)0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};
 	private static final byte[] CMD_CALIBRATE_ZERO_POINT = {(byte)0xff, 0x01, (byte)0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x78};
@@ -40,6 +37,7 @@ public class MHZ19BDriver {
 
 	private final SerialPort serialPort;
 	private int timeout; // read timeout (msec)
+	private final String prefixPortName;
 	private final String logPrefix;
 
 	private final AtomicInteger useCount = new AtomicInteger(0);
@@ -69,8 +67,13 @@ public class MHZ19BDriver {
 	}
 
 	private MHZ19BDriver(String portName, int timeout) {
-		this.serialPort = new SerialPort(Objects.requireNonNull(portName));
+		serialPort = SerialPort.getCommPort(Objects.requireNonNull(portName));
 		this.timeout = timeout;
+		if (portName.startsWith("/dev/")) {
+			prefixPortName = "/dev/";
+		} else {
+			prefixPortName = "";
+		}
 		this.logPrefix = "[" + portName + "] ";
 	}
 
@@ -78,18 +81,19 @@ public class MHZ19BDriver {
 		try {
 			LOG.debug(logPrefix + "before - useCount:{} timeout:{}", useCount.get(), timeout);
 			if (useCount.compareAndSet(0, 1)) {
-				while (serialPort.isOpened()) {
-					Thread.sleep(WAIT_CLOSE_INTERVAL);
-				}
-				Thread.sleep(WAIT_CLOSE_INTERVAL);
 				LOG.info(logPrefix + "opening serial port...");
-				serialPort.openPort();
+				if (!serialPort.openPort()) {
+					String message = logPrefix + "failed to open serial port.";
+					LOG.warn(message);
+					throw new IOException(message);
+				}
+				serialPort.setBaudRate(BAUDRATE);
+				serialPort.setNumDataBits(DATABITS);
+				serialPort.setNumStopBits(STOPBITS);
+				serialPort.setParity(PARITY);
+				serialPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_BLOCKING, timeout, timeout);
 				LOG.info(logPrefix + "opened serial port.");
-				serialPort.setParams(BAUDRATE, DATABITS, STOPBITS, PARITY);
 			}
-		} catch (SerialPortException e) {
-			LOG.warn(logPrefix + "failed to open serial port - caught - {}", e.toString());
-			throw new IOException(e);
 		} finally {
 			LOG.debug(logPrefix + "after - useCount:{} timeout:{}", useCount.get(), timeout);
 		}
@@ -99,26 +103,30 @@ public class MHZ19BDriver {
 		try {
 			LOG.debug(logPrefix + "before - useCount:{} timeout:{}", useCount.get(), timeout);
 			if (useCount.compareAndSet(1, 0)) {
-				if (serialPort.isOpened()) {
+				if (serialPort.isOpen()) {
 					LOG.info(logPrefix + "closing serial port...");
-					serialPort.closePort();
+					if (!serialPort.closePort()) {
+						String message = logPrefix + "failed to close serial port.";
+						LOG.warn(message);
+						throw new IOException(message);
+					}
 					LOG.info(logPrefix + "closed serial port.");
+				} else {
+					String message = logPrefix + "already closed.";
+					LOG.info(message);
 				}
 			}
-		} catch (SerialPortException e) {
-			LOG.warn(logPrefix + "failed to close serial port - caught - {}", e.toString());
-			throw new IOException(e);
 		} finally {
 			LOG.debug(logPrefix + "after - useCount:{} timeout:{}", useCount.get(), timeout);
 		}
 	}
 
 	public boolean isOpened() {
-		return serialPort.isOpened();
+		return serialPort.isOpen();
 	}
 
 	public String getPortName() {
-		return serialPort.getPortName();
+		return prefixPortName + serialPort.getSystemPortName();
 	}
 
 	private void dump(byte[] data, String tag) {
@@ -131,40 +139,26 @@ public class MHZ19BDriver {
 		}
 	}
 
-	private void flush() throws SerialPortException {
-		while (true) {
-			byte[] in = serialPort.readBytes();
-			if (in == null || in.length == 0) {
-				break;
-			}
-			LOG.info(logPrefix + "MH-Z19B CO2 sensor command: read and discard unnecessary buffer {} bytes in read.", in.length);
-			dump(in, "MH-Z19B CO2 sensor command: read and discard unnecessary buffer: ");
-		}
-	}
-
 	private void write(byte[] out) throws IOException {
-		try {
-			flush();
-			dump(out, "MH-Z19B CO2 sensor command: write: ");
-			serialPort.writeBytes(out);
-		} catch (SerialPortException e) {
-			LOG.warn(logPrefix + "caught - {}", e.toString());
-			throw new IOException(e);
+		dump(out, "MH-Z19B CO2 sensor command: write: ");
+		int ret = serialPort.writeBytes(out, out.length);
+		if (ret == -1) {
+			String message = logPrefix + "failed to write.";
+			LOG.warn(message);
+			throw new IOException(message);
 		}
 	}
 
 	private byte[] read(int size) throws IOException {
-		try {
-			byte[] in = serialPort.readBytes(size, timeout);
-			dump(in, "MH-Z19B CO2 sensor command:  read: ");
-			return in;
-		} catch (SerialPortException e) {
-			LOG.warn(logPrefix + "caught - {}", e.toString());
-			throw new IOException(e);
-		} catch (SerialPortTimeoutException e) {
-			LOG.warn(logPrefix + "caught - {}", e.toString());
-			throw new IOException(e);
+		byte[] in = new byte[size];
+		int ret = serialPort.readBytes(in, size);
+		if (ret == -1) {
+			String message = logPrefix + "failed to read.";
+			LOG.warn(message);
+			throw new IOException(message);
 		}
+		dump(in, "MH-Z19B CO2 sensor command:  read: ");
+		return in;
 	}
 
 	private int convertInt(byte[] data) {
