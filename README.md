@@ -18,6 +18,8 @@ for serial communication in java and have confirmed that it works in Raspberry P
   - Tx --> (8) GPIO14
   - Rx --> (10) GPIO15
   
+In addition, I was able to use MH-Z19B using **DSD TECH SH-U09C USB to TTL Serial Adapter with FTDI FT232RL Chip** instead of GPIO of Raspberry Pi 3B. At that time, I set `/dev/ttyUSB0` as the serial port name.
+  
 ## Install Raspbian Buster Lite OS (2019-07-10)
 The reason for using this version is that it is the latest as of July 2019 and [BlueZ](http://www.bluez.org/) 5.50 is included from the beginning, and use Bluetooth and serial communication simultaneously.
 
