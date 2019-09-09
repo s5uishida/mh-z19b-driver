@@ -13,8 +13,8 @@ for serial communication in java and have confirmed that it works in Raspberry P
   - Tx
   - Rx
 - [GPIO of Raspberry Pi 3B](https://www.raspberrypi.org/documentation/usage/gpio/README.md)
-  - Vin --> (4)
-  - GND --> (6)
+  - Vin --> (2) or (4)
+  - GND --> (6), (9), (14), (20), (25), (30), (34) or (39)
   - Tx --> (8) GPIO14
   - Rx --> (10) GPIO15
   
@@ -30,6 +30,15 @@ console=serial0,115200 --> removed
 ```
 - Edit `/boot/config.txt`
 ```
+@@ -45,7 +45,7 @@
+ # Uncomment some or all of these to enable the optional hardware interfaces
+ #dtparam=i2c_arm=on
+ #dtparam=i2s=on
+-#dtparam=spi=on
++dtparam=spi=on
+ 
+ # Uncomment this to enable the lirc-rpi module
+ #dtoverlay=lirc-rpi
 @@ -55,6 +55,10 @@
  # Enable audio (loads snd_bcm2835)
  dtparam=audio=on
