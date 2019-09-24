@@ -77,7 +77,7 @@ public class MHZ19BDriver {
 		this.logPrefix = "[" + portName + "] ";
 	}
 
-	synchronized public void open() throws IOException, InterruptedException {
+	synchronized public void open() throws IOException {
 		try {
 			LOG.debug(logPrefix + "before - useCount:{} timeout:{}", useCount.get(), timeout);
 			if (useCount.compareAndSet(0, 1)) {
@@ -127,6 +127,10 @@ public class MHZ19BDriver {
 
 	public String getPortName() {
 		return prefixPortName + serialPort.getSystemPortName();
+	}
+
+	public String getLogPrefix() {
+		return logPrefix;
 	}
 
 	private void dump(byte[] data, String tag) {
