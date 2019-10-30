@@ -76,7 +76,7 @@ I would like to thank the authors of these very useful codes, and all the contri
 
 ## How to use
 The following sample code will be helpful. Reading sensor data immediately after open may give a strange value, but I think that the normal values will be obtained after the second time.
-```
+```java
 import io.github.s5uishida.iot.device.mhz19b.driver.MHZ19BDriver;
 
 public class MyMHZ19B {
