@@ -86,6 +86,7 @@ public class MyMHZ19B {
             mhz19b = MHZ19BDriver.getInstance("/dev/ttyAMA0");
             mhz19b.open();
             mhz19b.setDetectionRange5000();
+            mhz19b.setAutoCalibration(false);
             
             while (true) {
                 int value = mhz19b.getGasConcentration();
