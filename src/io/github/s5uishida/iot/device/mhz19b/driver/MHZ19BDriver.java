@@ -144,6 +144,13 @@ public class MHZ19BDriver {
 	}
 
 	private void write(byte[] out) throws IOException {
+		int length = serialPort.bytesAvailable();
+		if (length > 0) {
+			byte[] unread = new byte[length];
+			serialPort.readBytes(unread, length);
+			LOG.debug(logPrefix + "deleted unread buffer length:{}", length);
+		}
+
 		dump(out, "MH-Z19B CO2 sensor command: write: ");
 		int ret = serialPort.writeBytes(out, out.length);
 		if (ret == -1) {
@@ -254,6 +261,7 @@ public class MHZ19BDriver {
 			mhz19b = MHZ19BDriver.getInstance("/dev/ttyAMA0");
 			mhz19b.open();
 			mhz19b.setDetectionRange5000();
+			mhz19b.setAutoCalibration(false);
 
 			while (true) {
 				int value = mhz19b.getGasConcentration();

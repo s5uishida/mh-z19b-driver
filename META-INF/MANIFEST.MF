@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: java driver for mh-z19b - intelligent infrared co2 module
 Bundle-SymbolicName: mh-z19b-driver;singleton:=true
-Bundle-Version: 0.1.2
+Bundle-Version: 0.1.3
 Automatic-Module-Name: mh-z19b-driver
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: com.fazecast.jSerialComm;version="[2.5.0,2.6.0)",
  org.slf4j;version="[1.7.25,1.8.0)";resolution:=optional
-Export-Package: io.github.s5uishida.iot.device.mhz19b.driver;version="0.1.2"
+Export-Package: io.github.s5uishida.iot.device.mhz19b.driver;version="0.1.3"
 Bundle-Vendor: Shigeru Ishida (s5uishida)
 Bundle-ActivationPolicy: lazy
